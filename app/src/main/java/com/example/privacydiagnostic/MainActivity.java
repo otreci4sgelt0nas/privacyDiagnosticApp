@@ -857,8 +857,8 @@ public class MainActivity extends AppCompatActivity {
         builder.setTitle("Export Successful! 📁")
                .setMessage(message)
                .setPositiveButton("Share File", (dialog, which) -> shareExportedFile(file))
-               .setNegativeButton("Open File", (dialog, which) -> openExportedFile(file))
-               .setNeutralButton("OK", null)
+               .setNegativeButton("Copy Path", (dialog, which) -> copyFilePath(file))
+               .setNeutralButton("Open File", (dialog, which) -> openExportedFile(file))
                .show();
     }
     
@@ -902,6 +902,23 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, "Failed to open file: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void copyFilePath(File file) {
+        try {
+            String filePath = file.getAbsolutePath();
+            
+            // Copy file path to clipboard
+            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            android.content.ClipData clip = android.content.ClipData.newPlainText("File Path", filePath);
+            clipboard.setPrimaryClip(clip);
+            
+            Toast.makeText(this, "File path copied to clipboard! 📋", Toast.LENGTH_LONG).show();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Failed to copy file path: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
     
