@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Privacy Diagnostic</string>
+    <string name="app_description">Scan your device to see what information apps can access</string>
+    <string name="scan_button">🔍 Scan Device</string>
+    <string name="export_button">📤 Export Results</string>
+    <string name="scan_prompt">Click the Scan Device button to start privacy analysis...</string>
+</resources>
