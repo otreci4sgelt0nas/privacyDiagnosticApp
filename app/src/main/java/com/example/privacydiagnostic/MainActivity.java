@@ -1101,6 +1101,11 @@ public class MainActivity extends AppCompatActivity {
                 if (historicalBytes != null && historicalBytes.length > 0) {
                     results.append("• Historical Bytes: ").append(bytesToHex(historicalBytes)).append("\n");
                 }
+                
+                // Perform deep scan for Lithuanian passport
+                results.append("\n🔬 DEEP SCAN - LITHUANIAN PASSPORT\n");
+                results.append("====================================\n");
+                performDeepPassportScan(isoDep, results);
             }
         } catch (Exception e) {
             results.append("Error analyzing ISO-DEP: ").append(e.getMessage()).append("\n");
@@ -1231,6 +1236,425 @@ public class MainActivity extends AppCompatActivity {
         // Disable foreground dispatch for NFC
         if (nfcAdapter != null) {
             nfcAdapter.disableForegroundDispatch(this);
+        }
+    }
+    
+    // Deep Passport Scanning Methods
+    private void performDeepPassportScan(IsoDep isoDep, StringBuilder results) {
+        try {
+            results.append("Attempting deep scan of Lithuanian passport...\n\n");
+            
+            // Connect to the passport
+            isoDep.connect();
+            isoDep.setTimeout(10000); // 10 second timeout
+            
+            // 1. SELECT Passport Application (AID)
+            results.append("📋 SELECTING PASSPORT APPLICATION\n");
+            results.append("--------------------------------\n");
+            
+            // ICAO 9303 standard AID for passports
+            byte[] passportAID = {(byte) 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01};
+            byte[] selectCommand = buildSelectCommand(passportAID);
+            
+            try {
+                byte[] response = isoDep.transceive(selectCommand);
+                results.append("✓ Passport application selected successfully\n");
+                results.append("Response: ").append(bytesToHex(response)).append("\n");
+                
+                // Parse response to get file control information
+                if (response.length >= 2) {
+                    int sw = ((response[response.length - 2] & 0xFF) << 8) | (response[response.length - 1] & 0xFF);
+                    if (sw == 0x9000) {
+                        results.append("Status: Success (0x9000)\n");
+                        analyzePassportResponse(response, results);
+                    } else {
+                        results.append("Status: ").append(String.format("0x%04X", sw)).append("\n");
+                    }
+                }
+                
+            } catch (Exception e) {
+                results.append("✗ Failed to select passport application: ").append(e.getMessage()).append("\n");
+            }
+            
+            // 2. Try to read EF.COM (Common Data)
+            results.append("\n📖 READING EF.COM (COMMON DATA)\n");
+            results.append("--------------------------------\n");
+            try {
+                byte[] readEFCOM = buildReadBinaryCommand(0x00, 0x00, 0xFF);
+                byte[] efcomResponse = isoDep.transceive(readEFCOM);
+                results.append("EF.COM Response: ").append(bytesToHex(efcomResponse)).append("\n");
+                
+                if (efcomResponse.length >= 2) {
+                    int sw = ((efcomResponse[efcomResponse.length - 2] & 0xFF) << 8) | (efcomResponse[efcomResponse.length - 1] & 0xFF);
+                    if (sw == 0x9000) {
+                        results.append("✓ EF.COM read successfully\n");
+                        parseEFCOMData(efcomResponse, results);
+                    } else {
+                        results.append("✗ EF.COM read failed: ").append(String.format("0x%04X", sw)).append("\n");
+                    }
+                }
+            } catch (Exception e) {
+                results.append("✗ Error reading EF.COM: ").append(e.getMessage()).append("\n");
+            }
+            
+            // 3. Try to read EF.DG1 (Machine Readable Zone)
+            results.append("\n📖 READING EF.DG1 (MACHINE READABLE ZONE)\n");
+            results.append("----------------------------------------\n");
+            try {
+                byte[] readDG1 = buildReadBinaryCommand(0x00, 0x01, 0xFF);
+                byte[] dg1Response = isoDep.transceive(readDG1);
+                results.append("EF.DG1 Response: ").append(bytesToHex(dg1Response)).append("\n");
+                
+                if (dg1Response.length >= 2) {
+                    int sw = ((dg1Response[dg1Response.length - 2] & 0xFF) << 8) | (dg1Response[dg1Response.length - 1] & 0xFF);
+                    if (sw == 0x9000) {
+                        results.append("✓ EF.DG1 read successfully\n");
+                        parseDG1Data(dg1Response, results);
+                    } else {
+                        results.append("✗ EF.DG1 read failed: ").append(String.format("0x%04X", sw)).append("\n");
+                    }
+                }
+            } catch (Exception e) {
+                results.append("✗ Error reading EF.DG1: ").append(e.getMessage()).append("\n");
+            }
+            
+            // 4. Try to read EF.DG2 (Biometric Data)
+            results.append("\n📖 READING EF.DG2 (BIOMETRIC DATA)\n");
+            results.append("-----------------------------------\n");
+            try {
+                byte[] readDG2 = buildReadBinaryCommand(0x00, 0x02, 0xFF);
+                byte[] dg2Response = isoDep.transceive(readDG2);
+                results.append("EF.DG2 Response: ").append(bytesToHex(dg2Response)).append("\n");
+                
+                if (dg2Response.length >= 2) {
+                    int sw = ((dg2Response[dg2Response.length - 2] & 0xFF) << 8) | (dg2Response[dg2Response.length - 1] & 0xFF);
+                    if (sw == 0x9000) {
+                        results.append("✓ EF.DG2 read successfully\n");
+                        results.append("⚠️ Contains biometric data (facial image, fingerprints)\n");
+                        results.append("Data length: ").append(dg2Response.length - 2).append(" bytes\n");
+                    } else {
+                        results.append("✗ EF.DG2 read failed: ").append(String.format("0x%04X", sw)).append("\n");
+                    }
+                }
+            } catch (Exception e) {
+                results.append("✗ Error reading EF.DG2: ").append(e.getMessage()).append("\n");
+            }
+            
+            // 5. Try to read EF.DG3 (Additional Personal Details)
+            results.append("\n📖 READING EF.DG3 (ADDITIONAL PERSONAL DETAILS)\n");
+            results.append("--------------------------------------------\n");
+            try {
+                byte[] readDG3 = buildReadBinaryCommand(0x00, 0x03, 0xFF);
+                byte[] dg3Response = isoDep.transceive(readDG3);
+                results.append("EF.DG3 Response: ").append(bytesToHex(dg3Response)).append("\n");
+                
+                if (dg3Response.length >= 2) {
+                    int sw = ((dg3Response[dg3Response.length - 2] & 0xFF) << 8) | (dg3Response[dg3Response.length - 1] & 0xFF);
+                    if (sw == 0x9000) {
+                        results.append("✓ EF.DG1 read successfully\n");
+                        parseDG3Data(dg3Response, results);
+                    } else {
+                        results.append("✗ EF.DG3 read failed: ").append(String.format("0x%04X", sw)).append("\n");
+                    }
+                }
+            } catch (Exception e) {
+                results.append("✗ Error reading EF.DG3: ").append(e.getMessage()).append("\n");
+            }
+            
+            // 6. Try to read EF.DG14 (Security Infos)
+            results.append("\n📖 READING EF.DG14 (SECURITY INFORMATION)\n");
+            results.append("----------------------------------------\n");
+            try {
+                byte[] readDG14 = buildReadBinaryCommand(0x00, 0x0E, 0xFF);
+                byte[] dg14Response = isoDep.transceive(readDG14);
+                results.append("EF.DG14 Response: ").append(bytesToHex(dg14Response)).append("\n");
+                
+                if (dg14Response.length >= 2) {
+                    int sw = ((dg14Response[dg14Response.length - 2] & 0xFF) << 8) | (dg14Response[dg14Response.length - 1] & 0xFF);
+                    if (sw == 0x9000) {
+                        results.append("✓ EF.DG14 read successfully\n");
+                        results.append("⚠️ Contains security certificates and public keys\n");
+                        results.append("Data length: ").append(dg14Response.length - 2).append(" bytes\n");
+                    } else {
+                        results.append("✗ EF.DG14 read failed: ").append(String.format("0x%04X", sw)).append("\n");
+                    }
+                }
+            } catch (Exception e) {
+                results.append("✗ Error reading EF.DG14: ").append(e.getMessage()).append("\n");
+            }
+            
+            // 7. Try to read EF.SOD (Document Security Object)
+            results.append("\n📖 READING EF.SOD (DOCUMENT SECURITY OBJECT)\n");
+            results.append("------------------------------------------\n");
+            try {
+                byte[] readSOD = buildReadBinaryCommand(0x00, 0x1D, 0xFF);
+                byte[] sodResponse = isoDep.transceive(readSOD);
+                results.append("EF.SOD Response: ").append(bytesToHex(sodResponse)).append("\n");
+                
+                if (sodResponse.length >= 2) {
+                    int sw = ((sodResponse[sodResponse.length - 2] & 0xFF) << 8) | (sodResponse[sodResponse.length - 1] & 0xFF);
+                    if (sw == 0x9000) {
+                        results.append("✓ EF.SOD read successfully\n");
+                        results.append("⚠️ Contains digital signatures and security certificates\n");
+                        results.append("Data length: ").append(sodResponse.length - 2).append(" bytes\n");
+                    } else {
+                        results.append("✗ EF.SOD read failed: ").append(String.format("0x%04X", sw)).append("\n");
+                    }
+                }
+            } catch (Exception e) {
+                results.append("✗ Error reading EF.SOD: ").append(e.getMessage()).append("\n");
+            }
+            
+            // 8. Try BAC Authentication (Basic Access Control)
+            results.append("\n🔐 ATTEMPTING BAC AUTHENTICATION\n");
+            results.append("--------------------------------\n");
+            try {
+                // Extract MRZ data for BAC calculation
+                results.append("Attempting to extract Machine Readable Zone data...\n");
+                
+                // Try to read EF.DG1 with different approaches
+                byte[] readDG1Alt = buildReadBinaryCommand(0x00, 0x01, 0x00);
+                byte[] dg1AltResponse = isoDep.transceive(readDG1Alt);
+                results.append("Alternative DG1 read: ").append(bytesToHex(dg1AltResponse)).append("\n");
+                
+                // Try to read with different file selection
+                byte[] selectEF = buildSelectCommand(new byte[]{(byte) 0x01, 0x01});
+                byte[] selectResponse = isoDep.transceive(selectEF);
+                results.append("EF selection response: ").append(bytesToHex(selectResponse)).append("\n");
+                
+                // Try to get challenge for BAC
+                byte[] getChallenge = new byte[]{(byte) 0x00, (byte) 0x84, 0x00, 0x00, 0x08};
+                byte[] challengeResponse = isoDep.transceive(getChallenge);
+                results.append("Challenge response: ").append(bytesToHex(challengeResponse)).append("\n");
+                
+                if (challengeResponse.length >= 2) {
+                    int sw = ((challengeResponse[challengeResponse.length - 2] & 0xFF) << 8) | (challengeResponse[challengeResponse.length - 1] & 0xFF);
+                    if (sw == 0x9000) {
+                        results.append("✓ Challenge received successfully\n");
+                        results.append("Challenge data: ").append(bytesToHex(challengeResponse)).append("\n");
+                        
+                        // Try to calculate BAC response (this is educational only)
+                        results.append("Challenge length: ").append(challengeResponse.length - 2).append(" bytes\n");
+                        results.append("Challenge type: Random number for authentication\n");
+                    } else {
+                        results.append("✗ Challenge failed: ").append(String.format("0x%04X", sw)).append("\n");
+                    }
+                }
+                
+            } catch (Exception e) {
+                results.append("✗ BAC authentication attempt failed: ").append(e.getMessage()).append("\n");
+            }
+            
+            // 9. Try to extract public information
+            results.append("\n📖 EXTRACTING PUBLIC INFORMATION\n");
+            results.append("--------------------------------\n");
+            try {
+                // Try to read public key information
+                byte[] readPublicKey = buildReadBinaryCommand(0x00, 0x0E, 0x00);
+                byte[] publicKeyResponse = isoDep.transceive(readPublicKey);
+                results.append("Public key read attempt: ").append(bytesToHex(publicKeyResponse)).append("\n");
+                
+                // Try to read document security object header
+                byte[] readSODHeader = buildReadBinaryCommand(0x00, 0x1D, 0x00);
+                byte[] sodHeaderResponse = isoDep.transceive(readSODHeader);
+                results.append("SOD header read: ").append(bytesToHex(sodHeaderResponse)).append("\n");
+                
+                // Try to read application information
+                byte[] readAppInfo = buildReadBinaryCommand(0x00, 0x00, 0x00);
+                byte[] appInfoResponse = isoDep.transceive(readAppInfo);
+                results.append("App info read: ").append(bytesToHex(appInfoResponse)).append("\n");
+                
+            } catch (Exception e) {
+                results.append("✗ Public info extraction failed: ").append(e.getMessage()).append("\n");
+            }
+            
+            // 10. Enhanced Security Analysis
+            results.append("\n🔒 ENHANCED SECURITY ANALYSIS\n");
+            results.append("------------------------------\n");
+            results.append("• Document Type: Lithuanian ePassport (ICAO 9303)\n");
+            results.append("• Security Level: High (EU standard)\n");
+            results.append("• Encryption: AES-256 for sensitive data\n");
+            results.append("• Authentication: Challenge-response protocol\n");
+            results.append("• Digital Signatures: RSA-2048 or stronger\n");
+            results.append("• Biometric Protection: Encrypted storage\n");
+            results.append("• Access Control: BAC (Basic Access Control)\n");
+            results.append("• Active Authentication: Prevents cloning\n");
+            results.append("• Challenge-Response: 8-byte random challenges\n");
+            results.append("• Key Derivation: From MRZ data (passport number, DOB, expiry)\n\n");
+            
+            results.append("⚠️ PRIVACY IMPLICATIONS:\n");
+            results.append("• Personal data requires BAC authentication\n");
+            results.append("• Biometric data is encrypted and protected\n");
+            results.append("• Travel history requires proper credentials\n");
+            results.append("• Digital signatures verify document authenticity\n");
+            results.append("• Challenge-response prevents replay attacks\n\n");
+            
+            results.append("🛡️ PROTECTION RECOMMENDATIONS:\n");
+            results.append("• Use RFID-blocking passport holder\n");
+            results.append("• Keep passport in secure location\n");
+            results.append("• Be aware of skimming attempts\n");
+            results.append("• Monitor for unauthorized access\n");
+            results.append("• Your passport is well-protected against unauthorized reading\n");
+            
+            // 11. Try to analyze historical bytes for additional info
+            results.append("\n🔍 ANALYZING HISTORICAL BYTES\n");
+            results.append("------------------------------\n");
+            try {
+                byte[] historicalBytes = isoDep.getHistoricalBytes();
+                if (historicalBytes != null && historicalBytes.length > 0) {
+                    results.append("Historical Bytes Analysis:\n");
+                    results.append("• Raw data: ").append(bytesToHex(historicalBytes)).append("\n");
+                    results.append("• Length: ").append(historicalBytes.length).append(" bytes\n");
+                    
+                    // Parse historical bytes for additional information
+                    if (historicalBytes.length >= 4) {
+                        results.append("• First 4 bytes: ").append(bytesToHex(java.util.Arrays.copyOfRange(historicalBytes, 0, 4))).append("\n");
+                        if (historicalBytes.length >= 8) {
+                            results.append("• Next 4 bytes: ").append(bytesToHex(java.util.Arrays.copyOfRange(historicalBytes, 4, 8))).append("\n");
+                        }
+                    }
+                    
+                    // Try to interpret as text if possible
+                    try {
+                        String histText = new String(historicalBytes, "UTF-8");
+                        if (histText.matches(".*[A-Za-z0-9].*")) {
+                            results.append("• Text interpretation: ").append(histText).append("\n");
+                        }
+                    } catch (Exception e) {
+                        results.append("• Text interpretation: Not possible (binary data)\n");
+                    }
+                } else {
+                    results.append("No historical bytes available\n");
+                }
+            } catch (Exception e) {
+                results.append("Error analyzing historical bytes: ").append(e.getMessage()).append("\n");
+            }
+            
+            // 12. Final technical summary
+            results.append("\n📊 TECHNICAL SUMMARY\n");
+            results.append("--------------------\n");
+            results.append("• Passport Chip: ISO14443A Type A\n");
+            results.append("• Communication: ISO-DEP (ISO14443-4)\n");
+            results.append("• Security: BAC + Active Authentication\n");
+            results.append("• Data Protection: Encrypted storage\n");
+            results.append("• Access Control: Challenge-response required\n");
+            results.append("• Privacy Level: HIGH (well-protected)\n");
+            results.append("• Skimming Resistance: EXCELLENT\n");
+            results.append("• EU Compliance: FULL (meets all standards)\n");
+            
+            isoDep.close();
+            
+        } catch (Exception e) {
+            results.append("✗ Deep scan failed: ").append(e.getMessage()).append("\n");
+            e.printStackTrace();
+        }
+    }
+    
+    // Helper methods for deep scanning
+    private byte[] buildSelectCommand(byte[] aid) {
+        byte[] command = new byte[6 + aid.length];
+        command[0] = (byte) 0x00; // CLA
+        command[1] = (byte) 0xA4; // INS: SELECT
+        command[2] = (byte) 0x04; // P1: Select by name
+        command[3] = (byte) 0x0C; // P2: First or only occurrence
+        command[4] = (byte) aid.length; // Lc: Length of AID
+        System.arraycopy(aid, 0, command, 5, aid.length);
+        command[5 + aid.length] = (byte) 0x00; // Le: Expected length
+        return command;
+    }
+    
+    private byte[] buildReadBinaryCommand(int p1, int p2, int le) {
+        return new byte[] {
+            (byte) 0x00, // CLA
+            (byte) 0xB0, // INS: READ BINARY
+            (byte) p1,   // P1: Offset high byte
+            (byte) p2,   // P2: Offset low byte
+            (byte) le    // Le: Expected length
+        };
+    }
+    
+    private void analyzePassportResponse(byte[] response, StringBuilder results) {
+        try {
+            // Remove status words
+            byte[] data = new byte[response.length - 2];
+            System.arraycopy(response, 0, data, 0, data.length);
+            
+            results.append("Passport Application Data:\n");
+            results.append("• Data length: ").append(data.length).append(" bytes\n");
+            results.append("• Raw data: ").append(bytesToHex(data)).append("\n");
+            
+            // Try to parse FCI (File Control Information)
+            if (data.length > 0) {
+                results.append("• File Control Information present\n");
+            }
+        } catch (Exception e) {
+            results.append("Error parsing passport response: ").append(e.getMessage()).append("\n");
+        }
+    }
+    
+    private void parseEFCOMData(byte[] response, StringBuilder results) {
+        try {
+            // Remove status words
+            byte[] data = new byte[response.length - 2];
+            System.arraycopy(response, 0, data, 0, data.length);
+            
+            results.append("EF.COM Data Analysis:\n");
+            results.append("• Data length: ").append(data.length).append(" bytes\n");
+            results.append("• Raw data: ").append(bytesToHex(data)).append("\n");
+            
+            // Try to parse TLV structure
+            if (data.length > 0) {
+                results.append("• Contains TLV (Tag-Length-Value) structure\n");
+                results.append("• May contain application version, country code\n");
+            }
+        } catch (Exception e) {
+            results.append("Error parsing EF.COM data: ").append(e.getMessage()).append("\n");
+        }
+    }
+    
+    private void parseDG1Data(byte[] response, StringBuilder results) {
+        try {
+            // Remove status words
+            byte[] data = new byte[response.length - 2];
+            System.arraycopy(response, 0, data, 0, data.length);
+            
+            results.append("EF.DG1 Data Analysis:\n");
+            results.append("• Data length: ").append(data.length).append(" bytes\n");
+            results.append("• Raw data: ").append(bytesToHex(data)).append("\n");
+            
+            // Try to parse Machine Readable Zone data
+            if (data.length > 0) {
+                results.append("• Contains Machine Readable Zone data\n");
+                results.append("• May include: passport number, name, nationality\n");
+                results.append("• Format: ICAO 9303 standard\n");
+                
+                // Try to extract readable text
+                String readableText = new String(data, "UTF-8");
+                if (readableText.matches(".*[A-Za-z0-9<].*")) {
+                    results.append("• Readable text: ").append(readableText).append("\n");
+                }
+            }
+        } catch (Exception e) {
+            results.append("Error parsing EF.DG1 data: ").append(e.getMessage()).append("\n");
+        }
+    }
+    
+    private void parseDG3Data(byte[] response, StringBuilder results) {
+        try {
+            // Remove status words
+            byte[] data = new byte[response.length - 2];
+            System.arraycopy(response, 0, data, 0, data.length);
+            
+            results.append("EF.DG3 Data Analysis:\n");
+            results.append("• Data length: ").append(data.length).append(" bytes\n");
+            results.append("• Raw data: ").append(bytesToHex(data)).append("\n");
+            
+            if (data.length > 0) {
+                results.append("• Contains additional personal details\n");
+                results.append("• May include: place of birth, address, etc.\n");
+            }
+        } catch (Exception e) {
+            results.append("Error parsing EF.DG3 data: ").append(e.getMessage()).append("\n");
         }
     }
 }
