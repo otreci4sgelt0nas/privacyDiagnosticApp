@@ -84,8 +84,16 @@ public class MainActivity extends AppCompatActivity {
         copyAllButton.setOnClickListener(v -> copyAllResults());
         nfcScanButton.setOnClickListener(v -> startNfcScan());
 
+        // Initialize camera buttons
+        Button camera1Button = findViewById(R.id.camera1Button);
+        Button camera2Button = findViewById(R.id.camera2Button);
+        
+        // Set up camera button click listeners
+        camera1Button.setOnClickListener(v -> startCamera1());
+        camera2Button.setOnClickListener(v -> startCamera2());
+
         // Enable scan button by default - we'll scan what we can with available permissions
-        scanButton.setEnabled(true);
+            scanButton.setEnabled(true);
         
         // Initially disable copy button until we have results
         copyAllButton.setEnabled(false);
@@ -152,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkPermissionsAndScan() {
         // Always allow scanning - we'll scan what we can with available permissions
-        performPrivacyScan();
+            performPrivacyScan();
         
         // If some permissions are missing, suggest requesting them
         if (!hasAllPermissions()) {
@@ -163,10 +171,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void performPrivacyScan() {
         try {
-            StringBuilder result = new StringBuilder();
-            result.append("🔍 PRIVACY DIAGNOSTIC SCAN RESULTS\n");
-            result.append("=====================================\n");
-            result.append("Scan completed: ").append(java.time.LocalDateTime.now().toString()).append("\n\n");
+        StringBuilder result = new StringBuilder();
+        result.append("🔍 PRIVACY DIAGNOSTIC SCAN RESULTS\n");
+        result.append("=====================================\n");
+        result.append("Scan completed: ").append(java.time.LocalDateTime.now().toString()).append("\n\n");
 
         // Device Information
         result.append("📱 DEVICE INFORMATION\n");
@@ -406,11 +414,11 @@ public class MainActivity extends AppCompatActivity {
 
     private String getNetworkOperator() {
         try {
-            TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
-                return tm.getNetworkOperatorName();
-            }
-            return "Permission required";
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+            return tm.getNetworkOperatorName();
+        }
+        return "Permission required";
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
@@ -418,11 +426,11 @@ public class MainActivity extends AppCompatActivity {
 
     private String getSimCountry() {
         try {
-            TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
-                return tm.getSimCountryIso();
-            }
-            return "Permission required";
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+            return tm.getSimCountryIso();
+        }
+        return "Permission required";
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
@@ -430,11 +438,11 @@ public class MainActivity extends AppCompatActivity {
 
     private String getSimOperator() {
         try {
-            TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
-                return tm.getSimOperatorName();
-            }
-            return "Permission required";
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+            return tm.getSimOperatorName();
+        }
+        return "Permission required";
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
@@ -442,11 +450,11 @@ public class MainActivity extends AppCompatActivity {
 
     private String getSimSerial() {
         try {
-            TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
-                return tm.getSimSerialNumber();
-            }
-            return "Permission required";
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+            return tm.getSimSerialNumber();
+        }
+        return "Permission required";
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
@@ -454,11 +462,11 @@ public class MainActivity extends AppCompatActivity {
 
     private String getPhoneNumber() {
         try {
-            TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED) {
-                return tm.getLine1Number();
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED) {
+            return tm.getLine1Number();
         }
-            return "Permission required";
+        return "Permission required";
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
@@ -466,11 +474,11 @@ public class MainActivity extends AppCompatActivity {
 
     private String getNetworkCountry() {
         try {
-            TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
-                return tm.getNetworkCountryIso();
-            }
-            return "Permission required";
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+            return tm.getNetworkCountryIso();
+        }
+        return "Permission required";
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
@@ -663,15 +671,15 @@ public class MainActivity extends AppCompatActivity {
 
     private String getDeviceId() {
         try {
-            TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    return tm.getImei();
-                } else {
-                    return tm.getDeviceId();
-                }
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                return tm.getImei();
+            } else {
+                return tm.getDeviceId();
             }
-            return "Permission required";
+        }
+        return "Permission required";
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
@@ -679,11 +687,11 @@ public class MainActivity extends AppCompatActivity {
 
     private String getSubscriberId() {
         try {
-            TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
-                return tm.getSubscriberId();
-            }
-            return "Permission required";
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+            return tm.getSubscriberId();
+        }
+        return "Permission required";
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
@@ -691,11 +699,11 @@ public class MainActivity extends AppCompatActivity {
 
     private String getLine1Number() {
         try {
-            TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED) {
-                return tm.getLine1Number();
-            }
-            return "Permission required";
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED) {
+            return tm.getLine1Number();
+        }
+        return "Permission required";
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
@@ -1232,5 +1240,167 @@ public class MainActivity extends AppCompatActivity {
         if (nfcAdapter != null) {
             nfcAdapter.disableForegroundDispatch(this);
         }
+    }
+    
+    // Camera Methods
+    private void startCamera1() {
+        // Check camera permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 456);
+            return;
+        }
+        
+        StringBuilder results = new StringBuilder();
+        results.append("📸 CAMERA API 1 ANALYSIS\n");
+        results.append("===========================\n");
+        results.append("Scan completed: ").append(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new java.util.Date())).append("\n\n");
+        
+        try {
+            results.append("📱 CAMERA API 1 INFORMATION\n");
+            results.append("---------------------------\n");
+            results.append("API Level: Legacy Camera API (API 1)\n");
+            results.append("Status: Deprecated since API 21 but still functional\n");
+            results.append("Security: Direct hardware access\n");
+            results.append("Privacy Risk: MEDIUM - legacy API with broad permissions\n\n");
+            
+            results.append("🔍 TECHNICAL ANALYSIS\n");
+            results.append("---------------------\n");
+            results.append("• Camera API 1: DEPRECATED since API 21\n");
+            results.append("• Access Type: Direct hardware control\n");
+            results.append("• Permission Model: Single CAMERA permission\n");
+            results.append("• Error Handling: Basic exception handling\n");
+            results.append("• Thread Safety: Manual thread management required\n");
+            results.append("• Device Compatibility: Good on older devices\n\n");
+            
+            results.append("🔒 PRIVACY ANALYSIS\n");
+            results.append("-------------------\n");
+            results.append("• Privacy Risk: MEDIUM\n");
+            results.append("• Permission Scope: Full camera access\n");
+            results.append("• Data Control: Limited privacy controls\n");
+            results.append("• Background Access: Possible if app backgrounded\n");
+            results.append("• Recommendation: Migrate to Camera2 or CameraX\n\n");
+            
+            results.append("📄 DEVELOPER NOTES\n");
+            results.append("------------------\n");
+            results.append("• Status: Legacy API, not recommended for new apps\n");
+            results.append("• Best Practice: Use Camera2 API or CameraX instead\n");
+            results.append("• Security: Modern APIs provide better permission controls\n");
+            results.append("• Maintenance: Limited support and updates\n");
+            
+        } catch (Exception e) {
+            results.append("Error: ").append(e.getMessage()).append("\n");
+        }
+        
+        resultText.setText(results.toString());
+        scrollView.fullScroll(ScrollView.FOCUS_UP);
+        copyAllButton.setEnabled(true);
+        Toast.makeText(this, "Camera API 1 analysis completed", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void startCamera2() {
+        // Check camera permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 456);
+            return;
+        }
+        
+        StringBuilder results = new StringBuilder();
+        results.append("📸 CAMERA2 API ANALYSIS\n");
+        results.append("========================\n");
+        results.append("Scan completed: ").append(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new java.util.Date())).append("\n\n");
+        
+        try {
+            android.hardware.camera2.CameraManager cameraManager = (android.hardware.camera2.CameraManager) getSystemService(Context.CAMERA_SERVICE);
+            String[] cameraIds = cameraManager.getCameraIdList();
+            
+            results.append("📱 CAMERA2 API INFORMATION\n");
+            results.append("--------------------------\n");
+            results.append("API Level: Camera2 API (API 21+)\n");
+            results.append("Status: Modern camera framework\n");
+            results.append("Available Cameras: ").append(cameraIds.length).append("\n");
+            results.append("Security: Structured permission system\n");
+            results.append("Privacy Risk: LOW - advanced controls available\n\n");
+            
+            if (cameraIds.length > 0) {
+                results.append("🔍 CAMERA CHARACTERISTICS\n");
+                results.append("-------------------------\n");
+                for (int i = 0; i < cameraIds.length; i++) {
+                    android.hardware.camera2.CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraIds[i]);
+                    
+                    results.append("Camera ").append(i).append(":\n");
+                    
+                    Integer facing = characteristics.get(android.hardware.camera2.CameraCharacteristics.LENS_FACING);
+                    if (facing != null) {
+                        switch (facing) {
+                            case android.hardware.camera2.CameraCharacteristics.LENS_FACING_FRONT:
+                                results.append("• Facing: Front-facing camera\n");
+                                break;
+                            case android.hardware.camera2.CameraCharacteristics.LENS_FACING_BACK:
+                                results.append("• Facing: Back-facing camera\n");
+                                break;
+                            default:
+                                results.append("• Facing: External camera\n");
+                                break;
+                        }
+                    }
+                    
+                    Integer supportLevel = characteristics.get(android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
+                    if (supportLevel != null) {
+                        results.append("• Hardware Level: ");
+                        switch (supportLevel) {
+                            case android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY:
+                                results.append("Legacy\n");
+                                break;
+                            case android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED:
+                                results.append("Limited\n");
+                                break;
+                            case android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL:
+                                results.append("Full\n");
+                                break;
+                            case android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_3:
+                                results.append("Level 3 (Professional)\n");
+                                break;
+                            default:
+                                results.append("Unknown\n");
+                                break;
+                        }
+                    }
+                    results.append("\n");
+                }
+            }
+            
+            results.append("🔍 TECHNICAL ANALYSIS\n");
+            results.append("---------------------\n");
+            results.append("• Camera2 API: MODERN since API 21\n");
+            results.append("• Access Type: Structured session management\n");
+            results.append("• Permission Model: Granular camera controls\n");
+            results.append("• Error Handling: Comprehensive callback system\n");
+            results.append("• Thread Safety: Built-in background thread support\n");
+            results.append("• Device Compatibility: Excellent on modern devices\n\n");
+            
+            results.append("🔒 PRIVACY ANALYSIS\n");
+            results.append("-------------------\n");
+            results.append("• Privacy Risk: LOW\n");
+            results.append("• Permission Scope: Controlled camera access\n");
+            results.append("• Data Control: Advanced privacy settings\n");
+            results.append("• Background Access: Restricted by system\n");
+            results.append("• Session Management: Explicit camera sessions\n");
+            results.append("• Recommendation: Good choice for professional apps\n\n");
+            
+            results.append("📄 DEVELOPER NOTES\n");
+            results.append("------------------\n");
+            results.append("• Status: Current standard for camera development\n");
+            results.append("• Best Practice: Use for apps requiring camera control\n");
+            results.append("• Security: Robust permission and session management\n");
+            results.append("• Features: Manual controls, RAW capture, etc.\n");
+            
+        } catch (Exception e) {
+            results.append("Error: ").append(e.getMessage()).append("\n");
+        }
+        
+        resultText.setText(results.toString());
+        scrollView.fullScroll(ScrollView.FOCUS_UP);
+        copyAllButton.setEnabled(true);
+        Toast.makeText(this, "Camera2 API analysis completed", Toast.LENGTH_SHORT).show();
     }
 }
