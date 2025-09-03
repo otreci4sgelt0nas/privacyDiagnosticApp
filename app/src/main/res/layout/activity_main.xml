@@ -73,6 +73,15 @@
         android:background="@drawable/button_background"
         android:textColor="@android:color/white" />
 
+    <Button
+        android:id="@+id/nfcScanButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🔍 Scan NFC (Passport/Cards)"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/button_background"
+        android:textColor="@android:color/white" />
+
     <ScrollView
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
@@ -97,3 +106,4 @@
     </ScrollView>
 
 </LinearLayout>
+

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- Support for ISO14443A (used by passports, credit cards) -->
+    <tech-list>
+        <tech>android.nfc.tech.IsoDep</tech>
+    </tech-list>
+    
+    <!-- Support for NFC-A (ISO14443A) -->
+    <tech-list>
+        <tech>android.nfc.tech.NfcA</tech>
+    </tech-list>
+    
+    <!-- Support for NFC-B (ISO14443B) -->
+    <tech-list>
+        <tech>android.nfc.tech.NfcB</tech>
+    </tech-list>
+    
+    <!-- Support for NFC-F (FeliCa) -->
+    <tech-list>
+        <tech>android.nfc.tech.NfcF</tech>
+    </tech-list>
+    
+    <!-- Support for NFC-V (ISO15693) -->
+    <tech-list>
+        <tech>android.nfc.tech.NfcV</tech>
+    </tech-list>
+    
+    <!-- Support for NDEF -->
+    <tech-list>
+        <tech>android.nfc.tech.Ndef</tech>
+    </tech-list>
+    
+    <!-- Support for NDEF Formatable -->
+    <tech-list>
+        <tech>android.nfc.tech.NdefFormatable</tech>
+    </tech-list>
+</resources>

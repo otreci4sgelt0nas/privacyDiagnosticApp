@@ -170,3 +170,4 @@ If you encounter any issues or have questions:
 ---
 
 **⚠️ Disclaimer**: This app is for educational and privacy awareness purposes. Always review app permissions and be cautious about granting sensitive permissions to any application.
+

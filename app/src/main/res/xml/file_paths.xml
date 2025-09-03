@@ -9,3 +9,4 @@
     <!-- Allow access to app's cache directory -->
     <cache-path name="cache" path="." />
 </paths>
+

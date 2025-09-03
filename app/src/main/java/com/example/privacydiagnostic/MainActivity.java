@@ -9,6 +9,14 @@ import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.nfc.NfcAdapter;
+import android.nfc.Tag;
+import android.nfc.tech.IsoDep;
+import android.nfc.tech.Ndef;
+import android.nfc.tech.NfcA;
+import android.nfc.tech.NfcB;
+import android.nfc.tech.NfcF;
+import android.nfc.tech.NfcV;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -40,6 +48,10 @@ public class MainActivity extends AppCompatActivity {
     private Button exportButton;
     private Button permissionsButton;
     private Button copyAllButton;
+    private Button nfcScanButton;
+    
+    // NFC components
+    private NfcAdapter nfcAdapter;
 
     // Required permissions for comprehensive scanning
     private static final String[] REQUIRED_PERMISSIONS = {
@@ -64,17 +76,22 @@ public class MainActivity extends AppCompatActivity {
         exportButton = findViewById(R.id.exportButton);
         permissionsButton = findViewById(R.id.permissionsButton);
         copyAllButton = findViewById(R.id.copyAllButton);
+        nfcScanButton = findViewById(R.id.nfcScanButton);
 
         scanButton.setOnClickListener(v -> checkPermissionsAndScan());
         exportButton.setOnClickListener(v -> exportResults());
         permissionsButton.setOnClickListener(v -> requestPermissions());
         copyAllButton.setOnClickListener(v -> copyAllResults());
+        nfcScanButton.setOnClickListener(v -> startNfcScan());
 
         // Enable scan button by default - we'll scan what we can with available permissions
         scanButton.setEnabled(true);
         
         // Initially disable copy button until we have results
         copyAllButton.setEnabled(false);
+        
+        // Initialize NFC
+        initializeNfc();
         
         // Show current permission status
         updatePermissionStatus();
@@ -941,6 +958,279 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, "Failed to copy results: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    // NFC Methods
+    private void initializeNfc() {
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        if (nfcAdapter == null) {
+            nfcScanButton.setEnabled(false);
+            nfcScanButton.setText("NFC Not Available");
+        } else if (!nfcAdapter.isEnabled()) {
+            nfcScanButton.setEnabled(false);
+            nfcScanButton.setText("NFC Disabled - Enable in Settings");
+        } else {
+            nfcScanButton.setEnabled(true);
+        }
+    }
+    
+    private void startNfcScan() {
+        if (nfcAdapter == null) {
+            Toast.makeText(this, "NFC is not available on this device", Toast.LENGTH_LONG).show();
+            return;
+        }
+        
+        if (!nfcAdapter.isEnabled()) {
+            Toast.makeText(this, "Please enable NFC in your device settings", Toast.LENGTH_LONG).show();
+            return;
+        }
+        
+        Toast.makeText(this, "Hold your passport/card near the back of your device", Toast.LENGTH_LONG).show();
+        
+        // The actual NFC reading will happen in onNewIntent when a tag is discovered
+    }
+    
+    @Override
+    protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        
+        if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(intent.getAction()) ||
+            NfcAdapter.ACTION_TAG_DISCOVERED.equals(intent.getAction()) ||
+            NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
+            
+            Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+            if (tag != null) {
+                processNfcTag(tag);
+            }
+        }
+    }
+    
+    private void processNfcTag(Tag tag) {
+        try {
+            StringBuilder nfcResults = new StringBuilder();
+            nfcResults.append("🔍 NFC TAG ANALYSIS RESULTS\n");
+            nfcResults.append("============================\n");
+            nfcResults.append("Scan completed: ").append(java.time.LocalDateTime.now().toString()).append("\n\n");
+            
+            // Basic tag information
+            nfcResults.append("📱 TAG INFORMATION\n");
+            nfcResults.append("-------------------\n");
+            byte[] tagId = tag.getId();
+            nfcResults.append("Tag ID: ").append(bytesToHex(tagId)).append("\n");
+            nfcResults.append("Tag ID (Decimal): ").append(bytesToDecimal(tagId)).append("\n");
+            
+            String[] techList = tag.getTechList();
+            nfcResults.append("Supported Technologies: ").append(java.util.Arrays.toString(techList)).append("\n\n");
+            
+            // Analyze each technology
+            for (String tech : techList) {
+                nfcResults.append("🔧 TECHNOLOGY: ").append(tech).append("\n");
+                nfcResults.append("-----------------\n");
+                
+                try {
+                    switch (tech) {
+                        case "android.nfc.tech.IsoDep":
+                            analyzeIsoDep(tag, nfcResults);
+                            break;
+                        case "android.nfc.tech.Ndef":
+                            analyzeNdef(tag, nfcResults);
+                            break;
+                        case "android.nfc.tech.NfcA":
+                            analyzeNfcA(tag, nfcResults);
+                            break;
+                        case "android.nfc.tech.NfcB":
+                            analyzeNfcB(tag, nfcResults);
+                            break;
+                        case "android.nfc.tech.NfcF":
+                            analyzeNfcF(tag, nfcResults);
+                            break;
+                        case "android.nfc.tech.NfcV":
+                            analyzeNfcV(tag, nfcResults);
+                            break;
+                        default:
+                            nfcResults.append("Technology not specifically analyzed\n");
+                    }
+                } catch (Exception e) {
+                    nfcResults.append("Error analyzing ").append(tech).append(": ").append(e.getMessage()).append("\n");
+                }
+                nfcResults.append("\n");
+            }
+            
+            // Security analysis
+            nfcResults.append("🔒 SECURITY ANALYSIS\n");
+            nfcResults.append("--------------------\n");
+            nfcResults.append("Potential Data Exposure:\n");
+            if (java.util.Arrays.asList(techList).contains("android.nfc.tech.IsoDep")) {
+                nfcResults.append("• ISO14443A (Passport/Credit Card) - HIGH RISK\n");
+                nfcResults.append("  This technology is commonly used in passports and can transmit personal data\n");
+            }
+            if (java.util.Arrays.asList(techList).contains("android.nfc.tech.Ndef")) {
+                nfcResults.append("• NDEF - MEDIUM RISK\n");
+                nfcResults.append("  Can contain URLs, text, or contact information\n");
+            }
+            nfcResults.append("\nRecommendation: Keep passport in RFID-blocking sleeve when not in use\n\n");
+            
+            // Display results
+            resultText.setText(nfcResults.toString());
+            scrollView.fullScroll(ScrollView.FOCUS_UP);
+            
+            // Enable copy button for NFC results
+            copyAllButton.setEnabled(true);
+            
+            Toast.makeText(this, "NFC scan completed! See results above.", Toast.LENGTH_LONG).show();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error processing NFC tag: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+    
+    private void analyzeIsoDep(Tag tag, StringBuilder results) {
+        try {
+            IsoDep isoDep = IsoDep.get(tag);
+            if (isoDep != null) {
+                results.append("ISO14443A (ISO-DEP) Analysis:\n");
+                results.append("• Technology: ISO14443A - commonly used in passports, credit cards\n");
+                results.append("• Communication: Can transmit personal identification data\n");
+                results.append("• Security: May require authentication (PIN, password)\n");
+                results.append("• Data Types: Personal info, biometric data, travel history\n");
+                
+                // Try to get historical bytes (if available)
+                byte[] historicalBytes = isoDep.getHistoricalBytes();
+                if (historicalBytes != null && historicalBytes.length > 0) {
+                    results.append("• Historical Bytes: ").append(bytesToHex(historicalBytes)).append("\n");
+                }
+            }
+        } catch (Exception e) {
+            results.append("Error analyzing ISO-DEP: ").append(e.getMessage()).append("\n");
+        }
+    }
+    
+    private void analyzeNdef(Tag tag, StringBuilder results) {
+        try {
+            Ndef ndef = Ndef.get(tag);
+            if (ndef != null) {
+                results.append("NDEF Analysis:\n");
+                results.append("• Type: ").append(ndef.getType()).append("\n");
+                results.append("• Writable: ").append(ndef.isWritable() ? "Yes" : "No").append("\n");
+                results.append("• Size: ").append(ndef.getMaxSize()).append(" bytes\n");
+                
+                // Try to read NDEF messages
+                try {
+                    ndef.connect();
+                    android.nfc.NdefMessage ndefMessage = ndef.getCachedNdefMessage();
+                    if (ndefMessage != null) {
+                        results.append("• NDEF Records: ").append(ndefMessage.getRecords().length).append("\n");
+                        for (int i = 0; i < ndefMessage.getRecords().length; i++) {
+                            android.nfc.NdefRecord record = ndefMessage.getRecords()[i];
+                            results.append("  Record ").append(i + 1).append(": ").append(record.getTnf()).append(" - ").append(bytesToHex(record.getType())).append("\n");
+                        }
+                    }
+                    ndef.close();
+                } catch (Exception e) {
+                    results.append("• Could not read NDEF content: ").append(e.getMessage()).append("\n");
+                }
+            }
+        } catch (Exception e) {
+            results.append("Error analyzing NDEF: ").append(e.getMessage()).append("\n");
+        }
+    }
+    
+    private void analyzeNfcA(Tag tag, StringBuilder results) {
+        try {
+            NfcA nfcA = NfcA.get(tag);
+            if (nfcA != null) {
+                results.append("NFC-A (ISO14443A) Analysis:\n");
+                results.append("• Technology: ISO14443A - used in passports, credit cards, access cards\n");
+                results.append("• ATQA: ").append(bytesToHex(nfcA.getAtqa())).append("\n");
+                results.append("• SAK: ").append(String.format("0x%02X", nfcA.getSak())).append("\n");
+                results.append("• Max Transceive Length: ").append(nfcA.getMaxTransceiveLength()).append(" bytes\n");
+            }
+        } catch (Exception e) {
+            results.append("Error analyzing NFC-A: ").append(e.getMessage()).append("\n");
+        }
+    }
+    
+    private void analyzeNfcB(Tag tag, StringBuilder results) {
+        try {
+            NfcB nfcB = NfcB.get(tag);
+            if (nfcB != null) {
+                results.append("NFC-B (ISO14443B) Analysis:\n");
+                results.append("• Technology: ISO14443B - used in some government IDs, transit cards\n");
+                results.append("• Application Data: ").append(bytesToHex(nfcB.getApplicationData())).append("\n");
+                results.append("• Protocol Info: ").append(bytesToHex(nfcB.getProtocolInfo())).append("\n");
+                results.append("• Max Transceive Length: ").append(nfcB.getMaxTransceiveLength()).append(" bytes\n");
+            }
+        } catch (Exception e) {
+            results.append("Error analyzing NFC-B: ").append(e.getMessage()).append("\n");
+        }
+    }
+    
+    private void analyzeNfcF(Tag tag, StringBuilder results) {
+        try {
+            NfcF nfcF = NfcF.get(tag);
+            if (nfcF != null) {
+                results.append("NFC-F (FeliCa) Analysis:\n");
+                results.append("• Technology: FeliCa - used in Japanese transit cards, some payment systems\n");
+                results.append("• Max Transceive Length: ").append(nfcF.getMaxTransceiveLength()).append(" bytes\n");
+            }
+        } catch (Exception e) {
+            results.append("Error analyzing NFC-F: ").append(e.getMessage()).append("\n");
+        }
+    }
+    
+    private void analyzeNfcV(Tag tag, StringBuilder results) {
+        try {
+            NfcV nfcV = NfcV.get(tag);
+            if (nfcV != null) {
+                results.append("NFC-V (ISO15693) Analysis:\n");
+                results.append("• Technology: ISO15693 - used in library books, some access cards\n");
+                results.append("• Response Flags: ").append(String.format("0x%02X", nfcV.getResponseFlags())).append("\n");
+                results.append("• DSF ID: ").append(String.format("0x%02X", nfcV.getDsfId())).append("\n");
+                results.append("• Max Transceive Length: ").append(nfcV.getMaxTransceiveLength()).append(" bytes\n");
+            }
+        } catch (Exception e) {
+            results.append("Error analyzing NFC-V: ").append(e.getMessage()).append("\n");
+        }
+    }
+    
+    private String bytesToHex(byte[] bytes) {
+        if (bytes == null) return "null";
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X", b & 0xFF));
+        }
+        return sb.toString();
+    }
+    
+    private String bytesToDecimal(byte[] bytes) {
+        if (bytes == null) return "null";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < bytes.length; i++) {
+            if (i > 0) sb.append(", ");
+            sb.append(bytes[i] & 0xFF);
+        }
+        return sb.toString();
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Enable foreground dispatch for NFC
+        if (nfcAdapter != null && nfcAdapter.isEnabled()) {
+            nfcAdapter.enableForegroundDispatch(this, 
+                android.app.PendingIntent.getActivity(this, 0, new android.content.Intent(this, getClass()).addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP), 0), 
+                null, null);
+        }
+    }
+    
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Disable foreground dispatch for NFC
+        if (nfcAdapter != null) {
+            nfcAdapter.disableForegroundDispatch(this);
         }
     }
 }

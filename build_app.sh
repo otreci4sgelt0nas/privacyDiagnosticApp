@@ -79,3 +79,4 @@ else
     echo "   - Verify Java version compatibility"
     exit 1
 fi
+
